@@ -1,0 +1,167 @@
+# backend/routers/users.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from database import get_db
+import db_models as models
+import schemas
+import auth
+
+router = APIRouter(
+    prefix="/api/v1/users",
+    tags=["Authentication"]
+)
+
+# ── Register ──────────────────────────────
+@router.post("/register", response_model=schemas.Token)
+def register(
+    user_data: schemas.UserRegister,
+    db: Session = Depends(get_db)
+):
+    existing = db.query(models.User).filter(
+        models.User.email == user_data.email
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already registered"
+        )
+
+    new_user = models.User(
+        full_name = user_data.full_name,
+        email     = user_data.email,
+        password  = auth.hash_password(user_data.password),
+        role      = user_data.role,
+        pmdc      = user_data.pmdc,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    token = auth.create_token({"sub": new_user.email})
+
+    return {
+        "access_token": token,
+        "token_type"  : "bearer",
+        "user"        : new_user
+    }
+
+
+# ── Login ─────────────────────────────────
+@router.post("/login", response_model=schemas.Token)
+def login(
+    user_data: schemas.UserLogin,
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(
+        models.User.email == user_data.email
+    ).first()
+
+    if not user or not auth.verify_password(
+        user_data.password, user.password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    token = auth.create_token({"sub": user.email})
+
+    return {
+        "access_token": token,
+        "token_type"  : "bearer",
+        "user"        : user
+    }
+
+
+# ── Get Profile ───────────────────────────
+@router.get("/me", response_model=schemas.UserResponse)
+def get_profile(
+    current_user = Depends(auth.get_current_user)
+):
+    return current_user
+
+
+# ── Get My Scans ──────────────────────────
+@router.get("/scans", response_model=list[schemas.ScanResponse])
+def get_my_scans(
+    current_user = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Scan).filter(
+        models.Scan.user_id == current_user.id
+    ).all()
+
+
+# ── Doctor: Pending Scans ─────────────────
+@router.get("/doctor/pending-scans")
+def get_pending_scans(
+    current_user = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "doctor":
+        raise HTTPException(
+            status_code=403,
+            detail="Doctors only"
+        )
+    return db.query(models.Scan).filter(
+        models.Scan.status == "pending"
+    ).all()
+
+
+# ── Doctor: Approve Scan ──────────────────
+@router.put("/doctor/approve-scan/{scan_id}")
+def approve_scan(
+    scan_id: int,
+    current_user = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "doctor":
+        raise HTTPException(
+            status_code=403,
+            detail="Doctors only"
+        )
+
+    scan = db.query(models.Scan).filter(
+        models.Scan.id == scan_id
+    ).first()
+
+    if not scan:
+        raise HTTPException(
+            status_code=404,
+            detail="Scan not found"
+        )
+
+    scan.status = "approved"
+    db.commit()
+
+    return {"message": "Scan approved ✅", "scan_id": scan_id}
+
+
+# ── Doctor: Reject Scan ───────────────────
+@router.put("/doctor/reject-scan/{scan_id}")
+def reject_scan(
+    scan_id: int,
+    current_user = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != "doctor":
+        raise HTTPException(
+            status_code=403,
+            detail="Doctors only"
+        )
+
+    scan = db.query(models.Scan).filter(
+        models.Scan.id == scan_id
+    ).first()
+
+    if not scan:
+        raise HTTPException(
+            status_code=404,
+            detail="Scan not found"
+        )
+
+    scan.status = "rejected"
+    db.commit()
+
+    return {"message": "Scan rejected ❌", "scan_id": scan_id}

@@ -1,0 +1,5 @@
+{
+  "css.validate": false,
+  "scss.validate": false,
+  "python.terminal.useEnvFile": true
+}
