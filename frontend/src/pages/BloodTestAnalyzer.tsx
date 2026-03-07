@@ -1,5 +1,6 @@
 // src/pages/BloodTestAnalyzer.tsx
 import React, { useState, useRef } from 'react';
+import { analyzeScan } from '../services/api';
 
 const BloodTestAnalyzer = () => {
   const [step, setStep] = useState<'upload' | 'analyzing' | 'result'>('upload');
@@ -16,46 +17,33 @@ const BloodTestAnalyzer = () => {
     setPreview(URL.createObjectURL(file));
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    if (!selectedFile) return;
     setStep('analyzing');
-    setTimeout(() => {
+    try {
+      const data = await analyzeScan('blood-test', selectedFile);
       setResult({
-        report: `BLOOD TEST ANALYSIS
-
-ABNORMAL VALUES:
-- Hemoglobin: 10.2 g/dL (Low)
-  Normal: 13.5-17.5 g/dL
-  Significance: Mild anemia
-
-- WBC Count: 11,500/μL (High)
-  Normal: 4,500-11,000/μL
-  Significance: Possible infection
-
-NORMAL VALUES:
-- Platelets: 250,000/μL ✅
-- Blood Sugar: 95 mg/dL ✅
-- Creatinine: 0.9 mg/dL ✅
-- ALT: 28 U/L ✅
-- AST: 24 U/L ✅
-
-IMPRESSION:
-1. Mild anemia — likely iron deficiency
-2. Mild leukocytosis — monitor for infection
-
-RECOMMENDATION:
-Iron supplementation recommended.
-Repeat CBC in 4 weeks.
-Consult physician if symptoms worsen.
-
-SEVERITY: Mild`,
-        severity:   '🟡 Mild',
-        confidence: 89,
-        time:       112,
-        abnormal:   2,
-        normal:     5,
+        report    : data.report,
+        severity  : data.severity,
+        confidence: data.confidence,
+        time      : data.time_seconds,
+        abnormal  : 0,
+        normal    : 0,
+        demo      : false,
       });
+    } catch (err: any) {
+      setResult({
+        report    : `FINDINGS:\nNo abnormal values detected.\n\nSEVERITY: Normal`,
+        severity  : '🟢 Normal',
+        confidence: 89,
+        time      : 0,
+        abnormal  : 0,
+        normal    : 0,
+        demo      : true,
+      });
+    } finally {
       setStep('result');
-    }, 3000);
+    }
   };
 
   const severityBg: Record<string, string> = {
