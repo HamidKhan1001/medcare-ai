@@ -44,11 +44,8 @@ export interface ScanResult {
   time: number;
 }
 
-// Auth/users  → local FastAPI backend
+// Auth/users + Image analysis → GCP Backend
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
-
-// Image analysis → Colab (update REACT_APP_COLAB_URL in .env when ngrok URL changes)
-const COLAB_URL = process.env.REACT_APP_COLAB_URL || '';
 
 // Fetch with 10s timeout so UI never hangs forever
 const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 10000) => {
@@ -154,33 +151,30 @@ export const getProfile = async () => {
   return res.json();
 };
 
-// ── Scan API (Colab) ──────────────────────
+// ── Scan API (GCP Backend → Colab) ───────
 
 export const analyzeScan = async (
   scanType: string,
   file: File
 ) => {
-  if (!COLAB_URL) throw new Error('Colab URL not set. Add REACT_APP_COLAB_URL to .env and restart.');
-
   const formData = new FormData();
   formData.append('file', file);
 
   const res = await fetchWithTimeout(
-    `${COLAB_URL}/api/v1/analyze/${scanType}`,
+    `${BASE_URL}/analyze/${scanType}`,  // GCP backend → forwards to Colab
     {
       method: 'POST',
       headers: {
-        // Bypass ngrok browser-warning interstitial page
-        'ngrok-skip-browser-warning': 'true',
+        'Authorization': `Bearer ${getToken()}`,
       },
       body: formData,
     },
-    60000  // 60s timeout — model inference takes time
+    120000  // 120s timeout — model inference takes time
   );
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || err.error || 'Analysis failed');
+    throw new Error(err.detail || 'Analysis failed');
   }
 
   return res.json();
