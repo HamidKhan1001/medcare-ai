@@ -31,11 +31,14 @@ const DoctorDashboard = ({
   };
 
   const severityColors: Record<string, string> = {
-    green:  'bg-green-100 text-green-700',
-    yellow: 'bg-yellow-100 text-yellow-700',
-    orange: 'bg-orange-100 text-orange-700',
-    red:    'bg-red-100 text-red-700 animate-pulse',
+    '🟢 Normal':   'bg-green-100 text-green-700',
+    '🟡 Mild':     'bg-yellow-100 text-yellow-700',
+    '🟠 Moderate': 'bg-orange-100 text-orange-700',
+    '🔴 Severe':   'bg-red-100 text-red-700',
+    '🚨 URGENT':   'bg-red-200 text-red-800 animate-pulse',
   };
+
+  const urgentCount = pendingScans.filter(s => s.severity?.includes('URGENT')).length;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -129,7 +132,7 @@ const DoctorDashboard = ({
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2 flex items-center gap-2">
             <span className="text-red-500 animate-pulse">🚨</span>
             <span className="text-red-700 text-sm font-medium">
-              1 Urgent Case Needs Review!
+              {urgentCount} Urgent Case{urgentCount !== 1 ? 's' : ''} Needs Review!
             </span>
           </div>
         </div>
@@ -137,10 +140,10 @@ const DoctorDashboard = ({
         {/* Stats */}
         <div className="grid grid-cols-4 gap-6 mb-8">
           {[
-            { icon: '⏳', label: 'Pending Reviews', value: '4',  color: 'yellow' },
-            { icon: '✅', label: 'Approved Today',  value: '8',  color: 'green' },
-            { icon: '👥', label: 'Total Patients',  value: '24', color: 'blue' },
-            { icon: '🚨', label: 'Urgent Cases',    value: '1',  color: 'red' },
+            { icon: '⏳', label: 'Pending Reviews', value: pendingScans.length,  color: 'yellow' },
+            { icon: '✅', label: 'Approved Today',  value: '—',                  color: 'green'  },
+            { icon: '👥', label: 'Total Patients',  value: '—',                  color: 'blue'   },
+            { icon: '🚨', label: 'Urgent Cases',    value: urgentCount,          color: 'red'    },
           ].map((stat, i) => (
             <div key={i}
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
