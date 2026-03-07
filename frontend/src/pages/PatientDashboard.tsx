@@ -39,6 +39,11 @@ const PatientDashboard = ({
     fetchScans();
   }, []);
 
+  const totalScans = recentScans.length;
+  const approved   = recentScans.filter(s => s.status === 'approved').length;
+  const pending    = recentScans.filter(s => s.status === 'pending').length;
+  const urgent     = recentScans.filter(s => s.severity?.includes('URGENT')).length;
+
   // Agar module selected hai — show karo
   if (activeModule === 'xray')
     return (
@@ -261,10 +266,10 @@ const PatientDashboard = ({
         {/* Stats */}
         <div className="grid grid-cols-4 gap-6 mb-8">
           {[
-            { icon: '🫁', label: 'Total Scans',    value: '12' },
-            { icon: '✅', label: 'Reports Ready',  value: '8'  },
-            { icon: '⏳', label: 'Pending Review', value: '3'  },
-            { icon: '🚨', label: 'Urgent Alerts',  value: '1'  },
+            { icon: '🫁', label: 'Total Scans',    value: totalScans },
+            { icon: '✅', label: 'Reports Ready',  value: approved   },
+            { icon: '⏳', label: 'Pending Review', value: pending    },
+            { icon: '🚨', label: 'Urgent Alerts',  value: urgent     },
           ].map((stat, i) => (
             <div key={i}
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
