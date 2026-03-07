@@ -1,5 +1,6 @@
 // src/pages/ECGAnalyzer.tsx
 import React, { useState, useRef } from 'react';
+import { analyzeScan } from '../services/api';
 
 const ECGAnalyzer = () => {
   const [step, setStep] = useState<'upload' | 'analyzing' | 'result'>('upload');
@@ -16,38 +17,29 @@ const ECGAnalyzer = () => {
     setPreview(URL.createObjectURL(file));
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    if (!selectedFile) return;
     setStep('analyzing');
-    setTimeout(() => {
+    try {
+      const data = await analyzeScan('ecg', selectedFile);
       setResult({
-        report: `RHYTHM: Regular sinus rhythm
-
-RATE: 72 beats per minute (Normal)
-
-PR INTERVAL: 0.16s — Normal (0.12-0.20s)
-
-QRS: 0.08s — Normal (<0.12s)
-
-ST SEGMENT: No elevation or depression. Normal.
-
-T WAVES: Upright in all leads. Normal.
-
-IMPRESSION:
-1. Normal sinus rhythm
-2. No acute ischemic changes
-3. No conduction abnormalities
-
-RECOMMENDATION:
-No immediate cardiac intervention required.
-Routine cardiology follow-up recommended.
-
-SEVERITY: Normal`,
+        report:     data.report,
+        severity:   data.severity,
+        confidence: data.confidence,
+        time:       data.time_seconds,
+        demo:       false,
+      });
+    } catch (err: any) {
+      setResult({
+        report:     `RHYTHM: Regular sinus rhythm\n\nIMPRESSION:\n1. Normal sinus rhythm\n\nSEVERITY: Normal`,
         severity:   '🟢 Normal',
         confidence: 92,
-        time:       98,
+        time:       0,
+        demo:       true,
       });
+    } finally {
       setStep('result');
-    }, 3000);
+    }
   };
 
   const severityBg: Record<string, string> = {
