@@ -13,12 +13,15 @@ export default function Login({ onLogin }: LoginProps) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [fieldErr, setFieldErr] = useState<Record<string, string>>({});
+  const [pmdc, setPmdc]         = useState('');
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (mode === 'register' && !name.trim()) e.name = 'Name is required';
     if (!email.includes('@')) e.email = 'Enter a valid email';
     if (password.length < 6) e.password = 'Minimum 6 characters';
+    if (mode === 'register' && role === 'doctor' && !pmdc.trim())
+      e.pmdc = 'PMDC number is required for doctors';
     setFieldErr(e);
     return Object.keys(e).length === 0;
   };
@@ -162,13 +165,32 @@ export default function Login({ onLogin }: LoginProps) {
             {/* Role selector (register only) */}
             {mode === 'register' && (
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 10 }}>I am a</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 700,
+                  letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 10 }}>
+                  I am registering as
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {([['patient','🙋','Patient','Get AI health analysis'],['doctor','👨‍⚕️','Doctor','Review & approve reports']] as const).map(([r, e, label, desc]) => (
-                    <div key={r} className="role-card" onClick={() => setRole(r as 'patient' | 'doctor')} style={{ background: role === r ? 'rgba(37,99,235,.2)' : 'rgba(255,255,255,.04)', border: `1.5px solid ${role === r ? 'rgba(96,165,250,.5)' : 'rgba(255,255,255,.08)'}`, borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 24, marginBottom: 6 }}>{e}</div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: role === r ? '#60A5FA' : 'rgba(255,255,255,.7)' }}>{label}</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginTop: 3, lineHeight: 1.4 }}>{desc}</div>
+                  {([
+                    ['patient', '🙋', 'Patient', 'I want AI health analysis'],
+                    ['doctor',  '👨‍⚕️', 'Doctor',  'I will review patient reports'],
+                  ] as const).map(([r, e, label, desc]) => (
+                    <div key={r} onClick={() => { setRole(r as any); setPmdc(''); }}
+                      style={{
+                        background: role === r ? 'rgba(37,99,235,.22)' : 'rgba(255,255,255,.04)',
+                        border: `2px solid ${role === r ? 'rgba(96,165,250,.6)' : 'rgba(255,255,255,.08)'}`,
+                        borderRadius: 14, padding: '14px 12px', textAlign: 'center', cursor: 'pointer',
+                        transition: 'all .22s',
+                      }}>
+                      <div style={{ fontSize: 26, marginBottom: 6 }}>{e}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14,
+                        color: role === r ? '#60A5FA' : 'rgba(255,255,255,.65)' }}>{label}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', marginTop: 4, lineHeight: 1.4 }}>{desc}</div>
+                      {role === r && (
+                        <div style={{ marginTop: 8, fontSize: 10, background: 'rgba(96,165,250,.2)',
+                          color: '#93C5FD', borderRadius: 100, padding: '2px 10px', fontWeight: 700 }}>
+                          ✓ Selected
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -212,6 +234,35 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
                 {fieldErr.password && <div style={{ fontSize: 11.5, color: '#F87171', marginTop: 5 }}>⚠ {fieldErr.password}</div>}
               </div>
+
+              {mode === 'register' && role === 'doctor' && (
+                <div>
+                  <label style={{ fontSize: 12.5, color: 'rgba(255,255,255,.5)', fontWeight: 600,
+                    display: 'block', marginBottom: 7, letterSpacing: '.03em' }}>
+                    PMDC Registration Number
+                    <span style={{ color: '#F87171', marginLeft: 4 }}>*</span>
+                  </label>
+                  <input
+                    value={pmdc}
+                    onChange={e => setPmdc(e.target.value)}
+                    placeholder="e.g. PMDC-12345-P"
+                    style={{
+                      width: '100%', background: 'rgba(255,255,255,.05)',
+                      border: `1.5px solid ${fieldErr.pmdc ? '#EF4444' : 'rgba(255,255,255,.1)'}`, borderRadius: 12,
+                      padding: '13px 16px', color: '#fff', fontSize: 14.5,
+                      fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' as const,
+                    }}
+                    onFocus={e => { e.target.style.borderColor = 'rgba(96,165,250,.6)';
+                      e.target.style.background = 'rgba(255,255,255,.08)'; }}
+                    onBlur={e => { e.target.style.borderColor = fieldErr.pmdc ? '#EF4444' : 'rgba(255,255,255,.1)';
+                      e.target.style.background = 'rgba(255,255,255,.05)'; }}
+                  />
+                  {fieldErr.pmdc && <div style={{ fontSize: 11.5, color: '#F87171', marginTop: 5 }}>⚠ {fieldErr.pmdc}</div>}
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.28)', marginTop: 6 }}>
+                    🏥 Required for doctor verification by MedCare AI team
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Error */}
