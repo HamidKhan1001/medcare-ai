@@ -9,16 +9,11 @@ const Counter = ({ end, suffix = '' }: { end: number; suffix?: string }) => {
   const [started, setStarted] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started) {
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !started) {
         setStarted(true);
-        let start = 0;
-        const step = Math.ceil(end / 50);
-        const timer = setInterval(() => {
-          start += step;
-          if (start >= end) { setCount(end); clearInterval(timer); }
-          else setCount(start);
-        }, 25);
+        let s = 0; const step = Math.ceil(end / 50);
+        const t = setInterval(() => { s += step; if (s >= end) { setCount(end); clearInterval(t); } else setCount(s); }, 25);
       }
     }, { threshold: 0.5 });
     if (ref.current) observer.observe(ref.current);
@@ -31,30 +26,23 @@ function App() {
   const [page, setPage] = useState('home');
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [activeModule, setActiveModule] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (isLoggedIn()) {
-      const user = getUser();
-      if (user) { setCurrentUser(user); setPage(user.role === 'doctor' ? 'doctor' : 'dashboard'); }
-    }
+    if (isLoggedIn()) { const u = getUser(); if (u) { setCurrentUser(u); setPage(u.role === 'doctor' ? 'doctor' : 'dashboard'); } }
   }, []);
-
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 30);
-    const handleMouse = (e: MouseEvent) => setMousePos({ x: (e.clientX / window.innerWidth) * 100, y: (e.clientY / window.innerHeight) * 100 });
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('mousemove', handleMouse);
-    return () => { window.removeEventListener('scroll', handleScroll); window.removeEventListener('mousemove', handleMouse); };
+    const s = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', s);
+    return () => window.removeEventListener('scroll', s);
   }, []);
-
   useEffect(() => {
-    const timer = setInterval(() => setActiveModule(p => (p + 1) % 9), 2500);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setActiveModule(p => (p + 1) % 9), 2000);
+    return () => clearInterval(t);
   }, []);
 
-  const handleLogin = (user: any) => { setCurrentUser(user); setPage(user.role === 'doctor' ? 'doctor' : 'dashboard'); };
+  const handleLogin = (u: any) => { setCurrentUser(u); setPage(u.role === 'doctor' ? 'doctor' : 'dashboard'); };
   const handleLogout = () => { logout(); setCurrentUser(null); setPage('home'); };
 
   if (page === 'login') return <Login onLogin={handleLogin} />;
@@ -62,168 +50,202 @@ function App() {
   if (page === 'doctor') return <DoctorDashboard user={currentUser} onLogout={handleLogout} />;
 
   const modules = [
-    { icon: '🫁', title: 'X-Ray Analysis', desc: 'Chest X-ray, MRI & CT scan analysis with radiologist-level accuracy', color: '#3B82F6' },
-    { icon: '🦴', title: 'Bone Scan', desc: 'Fracture detection and bone disease assessment', color: '#8B5CF6' },
-    { icon: '💓', title: 'ECG Analyzer', desc: 'Heart rhythm analysis & cardiac condition detection', color: '#EF4444' },
-    { icon: '🧪', title: 'Blood Tests', desc: 'Complete blood report interpretation with abnormal value detection', color: '#10B981' },
-    { icon: '🧠', title: 'Mental Health', desc: 'PHQ-9 & GAD-7 validated depression & anxiety screening', color: '#F59E0B' },
-    { icon: '🔍', title: 'Diagnosis AI', desc: 'Symptom-based differential diagnosis with confidence scores', color: '#06B6D4' },
-    { icon: '💊', title: 'Prescription', desc: 'Handwritten prescription reader in Urdu & English', color: '#EC4899' },
-    { icon: '📊', title: 'Vital Signs', desc: 'BP, blood sugar & oxygen level monitoring & tracking', color: '#14B8A6' },
-    { icon: '🚨', title: 'Emergency Aid', desc: 'Instant first aid guidance for critical situations', color: '#F97316' },
+    { icon: '🫁', title: 'X-Ray Analysis', desc: 'Chest X-ray, MRI & CT scan analysis', color: '#2563EB', light: '#DBEAFE' },
+    { icon: '🦴', title: 'Bone Scan', desc: 'Fracture & bone disease detection', color: '#7C3AED', light: '#EDE9FE' },
+    { icon: '💓', title: 'ECG Analyzer', desc: 'Heart rhythm & cardiac reports', color: '#DC2626', light: '#FEE2E2' },
+    { icon: '🧪', title: 'Blood Tests', desc: 'Complete blood report analysis', color: '#059669', light: '#D1FAE5' },
+    { icon: '🧠', title: 'Mental Health', desc: 'PHQ-9 & GAD-7 screening', color: '#D97706', light: '#FEF3C7' },
+    { icon: '🔍', title: 'Diagnosis AI', desc: 'Symptom-based diagnosis', color: '#0891B2', light: '#CFFAFE' },
+    { icon: '💊', title: 'Prescription', desc: 'Handwritten prescription reader', color: '#DB2777', light: '#FCE7F3' },
+    { icon: '📊', title: 'Vital Signs', desc: 'BP, sugar & oxygen monitoring', color: '#0D9488', light: '#CCFBF1' },
+    { icon: '🚨', title: 'Emergency Aid', desc: 'Instant first aid guidance', color: '#EA580C', light: '#FFEDD5' },
   ];
 
-  const testimonials = [
-    { name: 'Dr. Ahmed Khan', role: 'Cardiologist, Lahore', text: 'The ECG analysis is remarkably accurate. Saves hours of manual review every day.', avatar: '👨‍⚕️' },
-    { name: 'Fatima Malik', role: 'Patient, Karachi', text: 'Got my X-ray analyzed in 3 minutes. The Urdu report was a complete game changer.', avatar: '👩' },
-    { name: 'Dr. Sara Hussain', role: 'Radiologist, Islamabad', text: 'LLaVA-Med integration is impressive. Highly recommend for rural clinics across Pakistan.', avatar: '👩‍⚕️' },
-  ];
-
-  const btn = (label: string, primary: boolean, onClick?: () => void) => (
-    <button onClick={onClick} style={{
-      background: primary ? 'linear-gradient(135deg, #3B82F6, #1D4ED8)' : 'rgba(255,255,255,0.05)',
-      border: primary ? 'none' : '1px solid rgba(255,255,255,0.1)',
-      color: primary ? '#fff' : 'rgba(255,255,255,0.75)',
-      padding: '14px 30px', borderRadius: 12, cursor: 'pointer',
-      fontSize: 16, fontWeight: primary ? 700 : 600,
-      boxShadow: primary ? '0 8px 32px rgba(59,130,246,0.45)' : 'none',
-      transition: 'all 0.25s',
-    }}
-      onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-2px)'; if (primary) el.style.boxShadow = '0 14px 40px rgba(59,130,246,0.55)'; }}
-      onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; if (primary) el.style.boxShadow = '0 8px 32px rgba(59,130,246,0.45)'; }}
-    >{label}</button>
-  );
+  const isMobile = window.innerWidth < 768;
 
   return (
-    <div style={{ fontFamily: "'Outfit', -apple-system, sans-serif", background: '#060B18', color: '#fff', overflowX: 'hidden' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', 'DM Sans', -apple-system, sans-serif", background: '#FFFFFF', color: '#0F172A', overflowX: 'hidden' }}>
 
-      {/* Cursor spotlight */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: `radial-gradient(700px circle at ${mousePos.x}% ${mousePos.y}%, rgba(59,130,246,0.05), transparent 60%)`, transition: 'background 0.15s' }} />
-
-      {/* NAVBAR */}
+      {/* ═══ NAVBAR ═══ */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, height: 68,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 6%',
-        background: scrolled ? 'rgba(6,11,24,0.92)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(24px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : 'none',
-        transition: 'all 0.4s ease',
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+        height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 5%',
+        background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0)',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(0,0,0,0.06)' : 'none',
+        transition: 'all 0.3s ease',
+        boxShadow: scrolled ? '0 1px 20px rgba(0,0,0,0.06)' : 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, boxShadow: '0 0 24px rgba(59,130,246,0.5)' }}>🏥</div>
-          <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.5px' }}>MedCare <span style={{ color: '#3B82F6' }}>AI</span></span>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 4px 14px rgba(37,99,235,0.4)' }}>🏥</div>
+          <span style={{ fontWeight: 800, fontSize: 18, color: '#0F172A', letterSpacing: '-0.5px' }}>
+            MedCare <span style={{ color: '#2563EB' }}>AI</span>
+          </span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setPage('login')} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)', padding: '8px 20px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 500, transition: 'all 0.2s' }}
-            onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = 'rgba(59,130,246,0.5)'; el.style.color = '#fff'; }}
-            onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = 'rgba(255,255,255,0.12)'; el.style.color = 'rgba(255,255,255,0.75)'; }}
+
+        {/* Desktop nav */}
+        <div className="desktop-nav" style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setPage('login')} style={{ background: 'transparent', border: '1.5px solid #E2E8F0', color: '#475569', padding: '9px 22px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, transition: 'all 0.2s' }}
+            onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = '#2563EB'; el.style.color = '#2563EB'; el.style.background = '#EFF6FF'; }}
+            onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = '#E2E8F0'; el.style.color = '#475569'; el.style.background = 'transparent'; }}
           >Login</button>
-          <button onClick={() => setPage('login')} style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', border: 'none', color: '#fff', padding: '8px 22px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 16px rgba(59,130,246,0.4)', transition: 'all 0.2s' }}
-            onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 8px 24px rgba(59,130,246,0.5)'; }}
-            onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 4px 16px rgba(59,130,246,0.4)'; }}
+          <button onClick={() => setPage('login')} style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', border: 'none', color: '#fff', padding: '9px 24px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 14px rgba(37,99,235,0.4)', transition: 'all 0.2s' }}
+            onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-1px)'; el.style.boxShadow = '0 8px 20px rgba(37,99,235,0.5)'; }}
+            onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 4px 14px rgba(37,99,235,0.4)'; }}
           >Get Started →</button>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '100px 6% 60px', position: 'relative' }}>
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, backgroundImage: `linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px)`, backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent)' }} />
-        <div style={{ position: 'absolute', top: '10%', left: '5%', width: 600, height: 600, borderRadius: '50%', filter: 'blur(120px)', zIndex: 0, background: 'rgba(59,130,246,0.09)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 500, height: 500, borderRadius: '50%', filter: 'blur(120px)', zIndex: 0, background: 'rgba(139,92,246,0.07)', pointerEvents: 'none' }} />
+      {/* ═══ HERO ═══ */}
+      <section style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #EFF6FF 0%, #FFFFFF 50%, #F0FDF4 100%)', display: 'flex', alignItems: 'center', padding: '100px 5% 60px', position: 'relative', overflow: 'hidden' }}>
 
-        <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', gap: 60, flexWrap: 'wrap' }}>
-          {/* LEFT */}
-          <div style={{ flex: '1 1 480px', maxWidth: 620 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 100, padding: '7px 16px', marginBottom: 28, fontSize: 13, color: '#93C5FD', fontWeight: 600 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3B82F6', boxShadow: '0 0 10px #3B82F6', display: 'inline-block', animation: 'livePulse 2s infinite' }} />
-              🇵🇰 Pakistan's First AI Medical Platform
+        {/* Decorative blobs */}
+        <div style={{ position: 'absolute', top: '5%', right: '-5%', width: '45vw', height: '45vw', maxWidth: 600, maxHeight: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '5%', left: '-5%', width: '35vw', height: '35vw', maxWidth: 450, maxHeight: 450, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        {/* Dots pattern */}
+        <div style={{ position: 'absolute', top: '15%', right: '5%', opacity: 0.35, pointerEvents: 'none' }}>
+          {[...Array(6)].map((_, row) => (
+            <div key={row} style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+              {[...Array(6)].map((_, col) => (
+                <div key={col} style={{ width: 4, height: 4, borderRadius: '50%', background: '#2563EB' }} />
+              ))}
             </div>
-            <h1 style={{ fontSize: 'clamp(42px, 5.5vw, 74px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-2.5px', marginBottom: 22 }}>
+          ))}
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', gap: '5%', flexWrap: 'wrap' }}>
+
+          {/* LEFT TEXT */}
+          <div style={{ flex: '1 1 420px', maxWidth: 600 }}>
+            {/* Badge */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 100, padding: '6px 16px', marginBottom: 28 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 13, color: '#1D4ED8', fontWeight: 700 }}>🇵🇰 Pakistan's First AI Medical Platform</span>
+            </div>
+
+            <h1 style={{ fontSize: 'clamp(38px, 5.5vw, 72px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-2px', marginBottom: 22, color: '#0F172A' }}>
               Medical AI For<br />
-              <span style={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 40%, #818CF8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Every Pakistani</span>
+              <span style={{ background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Every Pakistani
+              </span>
             </h1>
-            <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.45)', lineHeight: 1.75, marginBottom: 36, maxWidth: 480 }}>
-              AI-powered X-ray analysis, ECG reading & blood test interpretation. Free. Fast. In Urdu & English.
+
+            <p style={{ fontSize: 'clamp(15px, 1.8vw, 19px)', color: '#64748B', lineHeight: 1.75, marginBottom: 36, maxWidth: 500 }}>
+              AI-powered X-ray analysis, ECG reading & blood test interpretation.
+              <strong style={{ color: '#0F172A' }}> Free. Fast.</strong> In Urdu & English.
             </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
-              {btn('Start Free Analysis →', true, () => setPage('login'))}
-              {btn('▶ Watch Demo', false)}
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
+              <button onClick={() => setPage('login')} style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', border: 'none', color: '#fff', padding: '14px 32px', borderRadius: 12, cursor: 'pointer', fontSize: 16, fontWeight: 700, boxShadow: '0 8px 24px rgba(37,99,235,0.4)', transition: 'all 0.25s' }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 14px 32px rgba(37,99,235,0.5)'; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 8px 24px rgba(37,99,235,0.4)'; }}
+              >Start Free Analysis →</button>
+              <button style={{ background: '#fff', border: '1.5px solid #E2E8F0', color: '#475569', padding: '14px 28px', borderRadius: 12, cursor: 'pointer', fontSize: 16, fontWeight: 600, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.25s' }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = '#2563EB'; el.style.color = '#2563EB'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = '#E2E8F0'; el.style.color = '#475569'; el.style.transform = 'translateY(0)'; }}
+              >▶ Watch Demo</button>
             </div>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              {['🔒 Secure & Private', '⚡ 2-3 min results', '🌐 Urdu & English', '💯 Always Free'].map((t, i) => (
-                <span key={i} style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>{t}</span>
+
+            {/* Trust badges */}
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              {[
+                { icon: '🔒', text: 'Secure & Private' },
+                { icon: '⚡', text: '2-3 min results' },
+                { icon: '🌐', text: 'Urdu & English' },
+                { icon: '💚', text: 'Always Free' },
+              ].map((b, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 16 }}>{b.icon}</span>
+                  <span style={{ fontSize: 13, color: '#94A3B8', fontWeight: 500 }}>{b.text}</span>
+                </div>
               ))}
             </div>
           </div>
 
-          {/* RIGHT — Live preview */}
-          <div style={{ flex: '1 1 340px', maxWidth: 420 }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)' }}>
-              <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.02)' }}>
-                {['#EF4444', '#F59E0B', '#10B981'].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />)}
-                <span style={{ marginLeft: 8, fontSize: 12, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace' }}>medcareai.app</span>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', animation: 'livePulse 2s infinite' }} />
-                  <span style={{ fontSize: 11, color: '#10B981', fontWeight: 700 }}>LIVE</span>
+          {/* RIGHT — App Mockup */}
+          <div style={{ flex: '1 1 320px', maxWidth: 400 }}>
+            <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 32px 80px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04)', overflow: 'hidden', border: '1px solid #F1F5F9' }}>
+              {/* Mac window chrome */}
+              <div style={{ background: '#F8FAFC', padding: '14px 18px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 7 }}>
+                {['#EF4444', '#F59E0B', '#22C55E'].map((c, i) => <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', background: c }} />)}
+                <div style={{ flex: 1, margin: '0 10px', background: '#EFF6FF', borderRadius: 6, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: '#93C5FD' }}>🔒</span>
+                  <span style={{ fontSize: 11, color: '#64748B', fontFamily: 'monospace' }}>medcareai.app</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22C55E', animation: 'pulse 2s infinite' }} />
+                  <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 700 }}>LIVE</span>
                 </div>
               </div>
-              <div style={{ padding: '20px' }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>AI MODULES</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {modules.map((mod, i) => (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, transition: 'all 0.4s ease',
-                      background: activeModule === i ? `${mod.color}18` : 'transparent',
-                      border: `1px solid ${activeModule === i ? `${mod.color}30` : 'transparent'}`,
-                      transform: activeModule === i ? 'translateX(4px)' : 'translateX(0)',
-                    }}>
-                      <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>{mod.icon}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: activeModule === i ? '#fff' : 'rgba(255,255,255,0.4)' }}>{mod.title}</div>
-                        {activeModule === i && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>{mod.desc.substring(0, 42)}...</div>}
-                      </div>
-                      {activeModule === i && <div style={{ width: 6, height: 6, borderRadius: '50%', background: mod.color, boxShadow: `0 0 8px ${mod.color}`, flexShrink: 0 }} />}
+
+              {/* Module list */}
+              <div style={{ padding: '18px' }}>
+                <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 12 }}>AI MODULES</div>
+                {modules.map((mod, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 12px', borderRadius: 12, marginBottom: 4,
+                    transition: 'all 0.35s ease',
+                    background: activeModule === i ? mod.light : 'transparent',
+                    border: `1px solid ${activeModule === i ? mod.color + '30' : 'transparent'}`,
+                    transform: activeModule === i ? 'translateX(6px)' : 'translateX(0)',
+                  }}>
+                    <span style={{ fontSize: 20, width: 30, textAlign: 'center', flexShrink: 0 }}>{mod.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: activeModule === i ? mod.color : '#475569' }}>{mod.title}</div>
+                      {activeModule === i && <div style={{ fontSize: 11, color: '#64748B', marginTop: 1 }}>{mod.desc}</div>}
                     </div>
-                  ))}
-                </div>
+                    {activeModule === i && (
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: mod.color, flexShrink: 0 }} />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* STATS */}
-      <section style={{ padding: '64px 6%', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.015)' }}>
+      {/* ═══ STATS ═══ */}
+      <section style={{ padding: '64px 5%', background: '#0F172A' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 40, textAlign: 'center' }}>
-          {[{ num: 9, suffix: '', label: 'AI Modules', icon: '🤖' }, { num: 3, suffix: '+', label: 'AI Models', icon: '🧬' }, { num: 24, suffix: '/7', label: 'Always Available', icon: '⚡' }, { num: 100, suffix: '%', label: 'Free for Patients', icon: '💚' }].map((s, i) => (
+          {[
+            { num: 9, suffix: '', label: 'AI Modules', icon: '🤖', color: '#60A5FA' },
+            { num: 3, suffix: '+', label: 'AI Models', icon: '🧬', color: '#34D399' },
+            { num: 24, suffix: '/7', label: 'Always Available', icon: '⚡', color: '#FBBF24' },
+            { num: 100, suffix: '%', label: 'Free for Patients', icon: '💚', color: '#F472B6' },
+          ].map((s, i) => (
             <div key={i}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{s.icon}</div>
-              <div style={{ fontSize: 46, fontWeight: 800, letterSpacing: '-2px', lineHeight: 1 }}><Counter end={s.num} suffix={s.suffix} /></div>
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 14, marginTop: 6, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>{s.icon}</div>
+              <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: '-2px', color: s.color, lineHeight: 1 }}>
+                <Counter end={s.num} suffix={s.suffix} />
+              </div>
+              <div style={{ color: '#94A3B8', fontSize: 14, marginTop: 8, fontWeight: 500 }}>{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* MODULES */}
-      <section style={{ padding: '110px 6%' }}>
+      {/* ═══ MODULES GRID ═══ */}
+      <section style={{ padding: '100px 5%', background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div style={{ display: 'inline-block', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#60A5FA', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Capabilities</div>
-            <h2 style={{ fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 14 }}>9 Medical AI Modules</h2>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 17, maxWidth: 500, margin: '0 auto', lineHeight: 1.6 }}>Powered by LLaVA-Med — published in Nature Medicine 2024</p>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div style={{ display: 'inline-block', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#2563EB', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>Capabilities</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 800, letterSpacing: '-1.5px', color: '#0F172A', marginBottom: 12 }}>9 Medical AI Modules</h2>
+            <p style={{ color: '#64748B', fontSize: 17, maxWidth: 480, margin: '0 auto' }}>Powered by LLaVA-Med — Nature Medicine 2024</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
             {modules.map((mod, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '26px', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)', display: 'flex', alignItems: 'flex-start', gap: 18 }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.background = `${mod.color}0D`; el.style.borderColor = `${mod.color}35`; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = `0 20px 40px ${mod.color}12`; }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.background = 'rgba(255,255,255,0.025)'; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}
+              <div key={i} style={{ background: '#fff', border: '1.5px solid #F1F5F9', borderRadius: 20, padding: '28px', cursor: 'pointer', transition: 'all 0.3s', display: 'flex', alignItems: 'flex-start', gap: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = mod.color + '50'; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = `0 20px 40px ${mod.color}20`; el.style.background = mod.light + 'AA'; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = '#F1F5F9'; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; el.style.background = '#fff'; }}
                 onClick={() => setPage('login')}
               >
-                <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0, background: `${mod.color}15`, border: `1px solid ${mod.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{mod.icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 5, letterSpacing: '-0.3px' }}>{mod.title}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 13, lineHeight: 1.6 }}>{mod.desc}</div>
+                <div style={{ width: 56, height: 56, borderRadius: 16, flexShrink: 0, background: mod.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>{mod.icon}</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#0F172A', marginBottom: 5 }}>{mod.title}</div>
+                  <div style={{ color: '#64748B', fontSize: 13, lineHeight: 1.6 }}>{mod.desc}</div>
                 </div>
               </div>
             ))}
@@ -231,54 +253,58 @@ function App() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section style={{ padding: '110px 6%', background: 'rgba(255,255,255,0.018)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section style={{ padding: '100px 5%', background: '#fff' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div style={{ display: 'inline-block', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#34D399', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Process</div>
-            <h2 style={{ fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 800, letterSpacing: '-1.5px' }}>How It Works</h2>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div style={{ display: 'inline-block', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#16A34A', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>Process</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 800, letterSpacing: '-1.5px', color: '#0F172A' }}>How It Works</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16 }}>
             {[
-              { step: '01', icon: '📤', title: 'Upload Your Scan', desc: 'Drag & drop your X-ray, ECG, or blood report image', color: '#3B82F6' },
-              { step: '02', icon: '⚡', title: 'AI Processing', desc: 'LLaVA-Med analyzes with medical precision in 2-3 minutes', color: '#8B5CF6' },
-              { step: '03', icon: '📋', title: 'Instant Report', desc: 'Receive detailed findings in Urdu & English', color: '#10B981' },
-              { step: '04', icon: '👨‍⚕️', title: 'Doctor Review', desc: 'Certified physicians verify and approve the report', color: '#F59E0B' },
+              { step: '01', icon: '📤', title: 'Upload Scan', desc: 'Drag & drop your X-ray, ECG, or blood report', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+              { step: '02', icon: '⚡', title: 'AI Analyzes', desc: 'LLaVA-Med processes with medical precision in 2-3 min', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+              { step: '03', icon: '📋', title: 'Get Report', desc: 'Detailed findings in Urdu & English instantly', color: '#059669', bg: '#F0FDF4', border: '#BBF7D0' },
+              { step: '04', icon: '👨‍⚕️', title: 'Doctor Reviews', desc: 'Certified physicians verify & approve the report', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
             ].map((s, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '32px 24px', textAlign: 'center', transition: 'all 0.3s' }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-4px)'; el.style.borderColor = `${s.color}30`; el.style.boxShadow = `0 20px 40px ${s.color}10`; }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.borderColor = 'rgba(255,255,255,0.07)'; el.style.boxShadow = 'none'; }}
+              <div key={i} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 20, padding: '32px 24px', textAlign: 'center', transition: 'all 0.3s', cursor: 'default' }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-6px)'; el.style.boxShadow = `0 20px 40px ${s.color}20`; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}
               >
-                <div style={{ fontSize: 11, fontWeight: 800, color: s.color, letterSpacing: '0.1em', marginBottom: 18, opacity: 0.7 }}>{s.step}</div>
-                <div style={{ width: 64, height: 64, borderRadius: 18, margin: '0 auto 20px', background: `${s.color}15`, border: `1px solid ${s.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>{s.icon}</div>
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10, letterSpacing: '-0.3px' }}>{s.title}</div>
-                <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 13, lineHeight: 1.65 }}>{s.desc}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: s.color, letterSpacing: '0.12em', marginBottom: 18 }}>{s.step}</div>
+                <div style={{ width: 68, height: 68, borderRadius: 20, margin: '0 auto 20px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, boxShadow: '0 4px 14px rgba(0,0,0,0.08)' }}>{s.icon}</div>
+                <div style={{ fontWeight: 700, fontSize: 17, color: '#0F172A', marginBottom: 10 }}>{s.title}</div>
+                <div style={{ color: '#64748B', fontSize: 13, lineHeight: 1.65 }}>{s.desc}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section style={{ padding: '110px 6%' }}>
+      {/* ═══ TESTIMONIALS ═══ */}
+      <section style={{ padding: '100px 5%', background: '#F8FAFC' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 60 }}>
-            <div style={{ display: 'inline-block', background: 'rgba(236,72,153,0.08)', border: '1px solid rgba(236,72,153,0.18)', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#F472B6', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>Testimonials</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px' }}>Trusted by Doctors & Patients</h2>
+            <div style={{ display: 'inline-block', background: '#FDF2F8', border: '1px solid #FBCFE8', borderRadius: 100, padding: '5px 16px', fontSize: 12, color: '#DB2777', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>Testimonials</div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 46px)', fontWeight: 800, letterSpacing: '-1.5px', color: '#0F172A' }}>Trusted by Doctors & Patients</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-            {testimonials.map((t, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '28px', transition: 'all 0.3s' }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-4px)'; el.style.borderColor = 'rgba(255,255,255,0.12)'; }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.borderColor = 'rgba(255,255,255,0.07)'; }}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            {[
+              { name: 'Dr. Ahmed Khan', role: 'Cardiologist, Lahore', text: 'The ECG analysis is remarkably accurate. Saves hours of manual review every day.', avatar: '👨‍⚕️', color: '#2563EB', bg: '#EFF6FF' },
+              { name: 'Fatima Malik', role: 'Patient, Karachi', text: 'Got my X-ray analyzed in 3 minutes. The Urdu report was a complete game changer for my family.', avatar: '👩', color: '#059669', bg: '#F0FDF4' },
+              { name: 'Dr. Sara Hussain', role: 'Radiologist, Islamabad', text: 'LLaVA-Med integration is impressive. Highly recommend for rural clinics across Pakistan.', avatar: '👩‍⚕️', color: '#7C3AED', bg: '#F5F3FF' },
+            ].map((t, i) => (
+              <div key={i} style={{ background: '#fff', border: '1.5px solid #F1F5F9', borderRadius: 20, padding: '28px', transition: 'all 0.3s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+                onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)'; el.style.borderColor = '#E2E8F0'; }}
+                onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; el.style.borderColor = '#F1F5F9'; }}
               >
-                <div style={{ color: '#F59E0B', fontSize: 16, marginBottom: 14, letterSpacing: 2 }}>★★★★★</div>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, lineHeight: 1.75, marginBottom: 20, fontStyle: 'italic' }}>"{t.text}"</p>
+                <div style={{ color: '#F59E0B', fontSize: 17, marginBottom: 14, letterSpacing: 2 }}>★★★★★</div>
+                <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.75, marginBottom: 22, fontStyle: 'italic' }}>"{t.text}"</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{t.avatar}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{t.avatar}</div>
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{t.name}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, marginTop: 2 }}>{t.role}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{t.name}</div>
+                    <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 2 }}>{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -287,36 +313,38 @@ function App() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ padding: '60px 6% 110px' }}>
-        <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.08))', border: '1px solid rgba(59,130,246,0.18)', borderRadius: 28, padding: '72px 40px', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -80, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'rgba(59,130,246,0.1)', filter: 'blur(60px)' }} />
-          <div style={{ position: 'absolute', bottom: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'rgba(139,92,246,0.08)', filter: 'blur(60px)' }} />
+      {/* ═══ CTA ═══ */}
+      <section style={{ padding: '80px 5% 100px', background: '#fff' }}>
+        <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center', background: 'linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%)', border: '1.5px solid #BFDBFE', borderRadius: 28, padding: '72px 40px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -60, right: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(37,99,235,0.08)', filter: 'blur(50px)' }} />
+          <div style={{ position: 'absolute', bottom: -60, left: -60, width: 240, height: 240, borderRadius: '50%', background: 'rgba(124,58,237,0.06)', filter: 'blur(50px)' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🇵🇰</div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', marginBottom: 14 }}>Healthcare for Every Pakistani</h2>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 17, marginBottom: 36, lineHeight: 1.7 }}>Join thousands getting AI-powered medical insights.<br />No cost. No barriers. Always free.</p>
-            <button onClick={() => setPage('login')} style={{ background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', border: 'none', color: '#fff', padding: '15px 38px', borderRadius: 14, cursor: 'pointer', fontSize: 17, fontWeight: 700, boxShadow: '0 8px 32px rgba(59,130,246,0.45)', transition: 'all 0.25s' }}
-              onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 16px 48px rgba(59,130,246,0.55)'; }}
-              onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 8px 32px rgba(59,130,246,0.45)'; }}
+            <div style={{ fontSize: 52, marginBottom: 18 }}>🇵🇰</div>
+            <h2 style={{ fontSize: 'clamp(26px, 4vw, 44px)', fontWeight: 800, letterSpacing: '-1.5px', color: '#0F172A', marginBottom: 14 }}>Healthcare for Every Pakistani</h2>
+            <p style={{ color: '#64748B', fontSize: 17, marginBottom: 36, lineHeight: 1.7 }}>
+              Join thousands getting AI-powered medical insights.<br />No cost. No barriers. Always free.
+            </p>
+            <button onClick={() => setPage('login')} style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', border: 'none', color: '#fff', padding: '15px 38px', borderRadius: 14, cursor: 'pointer', fontSize: 17, fontWeight: 700, boxShadow: '0 8px 24px rgba(37,99,235,0.4)', transition: 'all 0.25s' }}
+              onMouseEnter={e => { const el = e.currentTarget; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 16px 40px rgba(37,99,235,0.5)'; }}
+              onMouseLeave={e => { const el = e.currentTarget; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 8px 24px rgba(37,99,235,0.4)'; }}
             >Start Free Analysis →</button>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '32px 6%' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+      {/* ═══ FOOTER ═══ */}
+      <footer style={{ background: '#0F172A', padding: '40px 5%' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #3B82F6, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🏥</div>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>MedCare <span style={{ color: '#3B82F6' }}>AI</span></span>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #2563EB, #1D4ED8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>🏥</div>
+            <span style={{ fontWeight: 800, fontSize: 16, color: '#fff' }}>MedCare <span style={{ color: '#60A5FA' }}>AI</span></span>
           </div>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>Built with ❤️ by Syed Hassan Tayyab — Atomcamp Cohort 15 — 2026</p>
-          <div style={{ display: 'flex', gap: 20 }}>
+          <p style={{ color: '#475569', fontSize: 13 }}>Built with ❤️ by Syed Hassan Tayyab — Atomcamp Cohort 15 — 2026</p>
+          <div style={{ display: 'flex', gap: 24 }}>
             {['Privacy', 'Terms', 'Contact'].map(l => (
-              <span key={l} style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13, cursor: 'pointer', transition: 'color 0.2s' }}
-                onMouseEnter={e => { (e.target as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }}
-                onMouseLeave={e => { (e.target as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}
+              <span key={l} style={{ color: '#475569', fontSize: 13, cursor: 'pointer', transition: 'color 0.2s' }}
+                onMouseEnter={e => { (e.target as HTMLElement).style.color = '#94A3B8'; }}
+                onMouseLeave={e => { (e.target as HTMLElement).style.color = '#475569'; }}
               >{l}</span>
             ))}
           </div>
@@ -324,21 +352,23 @@ function App() {
       </footer>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { background: #060B18; }
-        @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.75)} }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #060B18; }
-        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.25); border-radius: 10px; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #F8FAFC; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
         @media (max-width: 768px) {
           nav { padding: 0 4% !important; }
-          section { padding: 70px 4% !important; }
+          section { padding: 64px 4% !important; }
+          h1 { letter-spacing: -1.5px !important; }
+          .desktop-nav button:first-child { display: none; }
         }
         @media (max-width: 480px) {
-          section { padding: 50px 4% !important; }
-          h1 { letter-spacing: -1.5px !important; }
+          section { padding: 48px 4% !important; }
+          h2 { letter-spacing: -1px !important; }
         }
       `}</style>
     </div>
