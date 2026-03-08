@@ -27,7 +27,6 @@ function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
   const [activeModule, setActiveModule] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn()) { const u = getUser(); if (u) { setCurrentUser(u); setPage(u.role === 'doctor' ? 'doctor' : 'dashboard'); } }
@@ -60,8 +59,6 @@ function App() {
     { icon: '📊', title: 'Vital Signs', desc: 'BP, sugar & oxygen monitoring', color: '#0D9488', light: '#CCFBF1' },
     { icon: '🚨', title: 'Emergency Aid', desc: 'Instant first aid guidance', color: '#EA580C', light: '#FFEDD5' },
   ];
-
-  const isMobile = window.innerWidth < 768;
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', 'DM Sans', -apple-system, sans-serif", background: '#FFFFFF', color: '#0F172A', overflowX: 'hidden' }}>
