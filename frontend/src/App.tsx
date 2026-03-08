@@ -44,7 +44,7 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [scrollY, setScrollY] = useState(0);
+  
   const [activeMod, setActiveMod] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [email, setEmail] = useState('');
@@ -55,7 +55,7 @@ export default function App() {
     if (isLoggedIn()) { const u = getUser(); if (u) { setUser(u); setPage(u.role === 'doctor' ? 'doctor' : 'dashboard'); } }
   }, []);
   useEffect(() => {
-    const fn = () => { setScrolled(window.scrollY > 24); setScrollY(window.scrollY); setMobileCtaVis(window.scrollY > 400); };
+    const fn = () => { setScrolled(window.scrollY > 24); setMobileCtaVis(window.scrollY > 400); };
     window.addEventListener('scroll', fn); return () => window.removeEventListener('scroll', fn);
   }, []);
   useEffect(() => { const t = setInterval(() => setActiveMod(p => (p + 1) % 9), 2000); return () => clearInterval(t); }, []);
