@@ -31,6 +31,7 @@ class Scan(Base):
     confidence   = Column(Float, nullable=True)
     time_seconds = Column(Float, nullable=True)
     status       = Column(String, default="pending")
+    doctor_notes = Column(Text, nullable=True)
     created_at   = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="scans")

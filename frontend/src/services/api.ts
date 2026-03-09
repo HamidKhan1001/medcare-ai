@@ -203,28 +203,26 @@ export const getPendingScans = async () => {
   return res.json();
 };
 
-export const approveScan = async (scanId: number, notes?: string) => {
+export const approveScan = async (scanId: number, notes: string = '') => {
   const res = await fetch(
-    `${BASE_URL}/users/doctor/approve-scan/${scanId}`,
+    `${BASE_URL}/users/doctor/approve/${scanId}?notes=${encodeURIComponent(notes)}`,
     {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      body: notes ? JSON.stringify({ notes }) : undefined
+      headers: { 'Authorization': `Bearer ${getToken()}` },
     }
   );
-  if (!res.ok) throw new Error('Failed');
+  if (!res.ok) throw new Error('Approve nahi ho saka!');
   return res.json();
 };
 
-export const rejectScan = async (scanId: number, notes?: string) => {
+export const rejectScan = async (scanId: number, notes: string = '') => {
   const res = await fetch(
-    `${BASE_URL}/users/doctor/reject-scan/${scanId}`,
+    `${BASE_URL}/users/doctor/reject/${scanId}?notes=${encodeURIComponent(notes)}`,
     {
       method: 'PUT',
-      headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      body: notes ? JSON.stringify({ notes }) : undefined
+      headers: { 'Authorization': `Bearer ${getToken()}` },
     }
   );
-  if (!res.ok) throw new Error('Failed');
+  if (!res.ok) throw new Error('Reject nahi ho saka!');
   return res.json();
 };
